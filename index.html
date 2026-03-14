@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 マタニティ献立ダイアリー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sakura: #F8C8D4; --sakura-deep: #E8A0B4; --sakura-pale: #FFF0F3;
+    --green: #7BA889; --green-light: #D4E8D0;
+    --cream: #FFF9F0; --gold: #D4A853;
+    --text: #3A2E2A; --text-mid: #6B5B54; --text-light: #9B8B84;
+    --paper: #FFFBF5; --border: #E8DDD4;
+    --shadow: rgba(58,46,42,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Zen Maru Gothic', sans-serif; background: var(--cream);
+    color: var(--text); line-height: 1.9; font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Sakura bg ===== */
+  .sakura-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .petal {
+    position: absolute; width: 12px; height: 12px; background: var(--sakura);
+    border-radius: 50% 0 50% 50%; opacity: 0.22; animation: fall linear infinite;
+  }
+  .petal:nth-child(1){left:8%;animation-duration:14s;width:10px;height:10px}
+  .petal:nth-child(2){left:22%;animation-duration:18s;animation-delay:2s;width:14px;height:14px}
+  .petal:nth-child(3){left:38%;animation-duration:12s;animation-delay:5s}
+  .petal:nth-child(4){left:54%;animation-duration:16s;animation-delay:1s;width:8px;height:8px}
+  .petal:nth-child(5){left:68%;animation-duration:20s;animation-delay:3s;width:11px;height:11px}
+  .petal:nth-child(6){left:82%;animation-duration:15s;animation-delay:7s}
+  @keyframes fall {
+    0%{top:-20px;transform:rotate(0) translateX(0);opacity:.25}
+    50%{transform:rotate(180deg) translateX(35px);opacity:.15}
+    100%{top:105vh;transform:rotate(360deg) translateX(-15px);opacity:0}
+  }
+
+  /* ===== Progress ===== */
+  .progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--sakura-deep),var(--green));z-index:100;transition:width .1s linear}
+
+  /* ===== Header ===== */
+  .site-header {
+    position: relative; z-index: 1; text-align: center;
+    padding: 60px 24px 48px;
+    background:
+      radial-gradient(ellipse at 20% 80%,rgba(248,200,212,.3) 0%,transparent 50%),
+      radial-gradient(ellipse at 80% 20%,rgba(212,168,83,.1) 0%,transparent 50%),
+      var(--cream);
+  }
+  .site-header h1 {
+    font-family:'Zen Old Mincho',serif; font-size:clamp(1.6rem,4.5vw,2.4rem);
+    font-weight:700; line-height:1.5; margin-bottom:12px;
+  }
+  .site-header h1 .accent{color:var(--sakura-deep)}
+  .site-header h1 .green{color:var(--green)}
+  .site-subtitle{font-size:.92rem;color:var(--text-mid);max-width:500px;margin:0 auto;line-height:1.9}
+  .site-subtitle strong{color:var(--gold)}
+
+  /* ===== Nav Tabs ===== */
+  .nav-tabs {
+    display:flex; justify-content:center; gap:8px; padding:0 24px 32px;
+    position:relative; z-index:1;
+  }
+  .nav-tab {
+    padding:10px 24px; border-radius:30px; border:2px solid var(--border);
+    background:var(--paper); font-family:inherit; font-size:.88rem;
+    font-weight:700; cursor:pointer; color:var(--text-mid);
+    transition:all .3s ease;
+  }
+  .nav-tab:hover{border-color:var(--sakura);color:var(--sakura-deep)}
+  .nav-tab.active{background:var(--sakura-deep);color:white;border-color:var(--sakura-deep)}
+
+  /* ===== Main ===== */
+  .main{position:relative;z-index:1;max-width:740px;margin:0 auto;padding:0 24px 80px}
+
+  /* ===== Card ===== */
+  .card {
+    background:var(--paper); border-radius:20px; padding:44px 40px;
+    margin-bottom:28px; box-shadow:0 4px 30px var(--shadow);
+    border:1px solid rgba(232,221,212,.5);
+  }
+  @media(max-width:600px){.card{padding:28px 20px}}
+
+  .section-label {
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:.75rem;font-weight:700;color:var(--green);
+    letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;
+  }
+  .section-label::before{content:'';display:inline-block;width:18px;height:2px;background:var(--green);border-radius:1px}
+  .section-title{font-family:'Zen Old Mincho',serif;font-size:1.5rem;font-weight:700;margin-bottom:24px}
+
+  /* ===== Date badge ===== */
+  .date-badge {
+    display:inline-block;padding:5px 16px;border-radius:30px;
+    background:rgba(248,200,212,.15);border:1px solid rgba(248,200,212,.3);
+    font-size:.78rem;color:var(--sakura-deep);font-weight:700;
+    margin-bottom:16px;
+  }
+
+  /* ===== Menu card ===== */
+  .menu-item {
+    display:flex;align-items:center;gap:14px;padding:16px 20px;
+    background:linear-gradient(135deg,var(--sakura-pale),var(--cream));
+    border-radius:12px;border:1px solid rgba(248,200,212,.25);
+    margin-bottom:10px;cursor:pointer;transition:all .3s ease;
+  }
+  .menu-item:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(248,200,212,.2)}
+  .menu-num {
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;
+    background:var(--sakura-deep);color:white;font-weight:700;font-size:.82rem;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .menu-name{font-size:.98rem;font-weight:700}
+  .menu-time{font-size:.78rem;color:var(--text-light);margin-top:2px}
+
+  /* ===== Recipe accordion ===== */
+  .recipe-section{margin-bottom:24px}
+  .recipe-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .recipe-emoji{font-size:1.5rem}
+  .recipe-head h3{font-family:'Zen Old Mincho',serif;font-size:1.2rem;font-weight:700}
+  .recipe-desc{color:var(--text-mid);font-size:.93rem;line-height:2;margin-bottom:16px}
+  .toggle-btn {
+    display:inline-flex;align-items:center;gap:8px;
+    background:none;border:2px solid var(--sakura);color:var(--sakura-deep);
+    padding:9px 20px;border-radius:30px;font-family:inherit;
+    font-size:.88rem;font-weight:700;cursor:pointer;transition:all .3s ease;
+  }
+  .toggle-btn:hover{background:var(--sakura-pale);border-color:var(--sakura-deep)}
+  .toggle-btn.open{background:var(--sakura-deep);color:white;border-color:var(--sakura-deep)}
+  .recipe-body{max-height:0;overflow:hidden;opacity:0;transition:all .5s ease;margin-top:0}
+  .recipe-body.show{max-height:3000px;opacity:1;margin-top:16px}
+
+  /* Ingredients */
+  .ing-box {
+    background:linear-gradient(135deg,var(--sakura-pale),#FFF8F0);
+    border-radius:14px;padding:22px 24px;margin-bottom:16px;
+    border:1px solid rgba(248,200,212,.2);
+  }
+  @media(max-width:600px){.ing-box{padding:18px 14px}}
+  .ing-box h4{font-family:'Zen Old Mincho',serif;font-size:1rem;margin-bottom:14px}
+  .ing-box h4::after{content:'（2人分）';font-size:.75rem;font-weight:400;color:var(--text-light);font-family:'Zen Maru Gothic',sans-serif;margin-left:6px}
+  .ing-list{list-style:none}
+  .ing-list li{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed rgba(232,221,212,.5);font-size:.9rem}
+  .ing-list li:last-child{border-bottom:none}
+  .ing-name{font-weight:500}
+  .ing-amt{color:var(--text-mid);font-size:.85rem;white-space:nowrap;margin-left:10px}
+
+  /* Steps */
+  .steps-box{background:var(--paper);border-radius:14px;padding:22px 24px;border:1px solid var(--border)}
+  @media(max-width:600px){.steps-box{padding:18px 14px}}
+  .steps-box h4{font-family:'Zen Old Mincho',serif;font-size:1rem;margin-bottom:16px}
+  .step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+  .step:last-child{margin-bottom:0}
+  .step-n{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--green);color:white;font-weight:700;font-size:.78rem;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  .step-t{color:var(--text-mid);font-size:.9rem;line-height:1.85;flex:1}
+
+  /* Tip */
+  .tip {
+    display:flex;align-items:flex-start;gap:10px;padding:14px 18px;
+    background:linear-gradient(135deg,#FFF8E1,#FFF3CC);border-radius:12px;
+    font-size:.88rem;color:var(--text-mid);line-height:1.8;
+    border-left:3px solid var(--gold);margin-top:16px;
+  }
+
+  /* ===== Nutrient cards ===== */
+  .nut-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:20px}
+  .nut-card{padding:16px;border-radius:12px;text-align:center;transition:transform .3s}
+  .nut-card:hover{transform:translateY(-2px)}
+  .nut-card.iron{background:linear-gradient(135deg,#FFE0E0,#FFC8C8)}
+  .nut-card.folic{background:linear-gradient(135deg,#D4E8D0,#BCD8B4)}
+  .nut-card.calcium{background:linear-gradient(135deg,#E0ECFF,#C8DCFF)}
+  .nut-card.fiber{background:linear-gradient(135deg,#F0E4D0,#E4D4BC)}
+  .nut-card .e{font-size:1.5rem;margin-bottom:6px}
+  .nut-card h4{font-size:.88rem;font-weight:700;margin-bottom:4px}
+  .nut-card p{font-size:.75rem;color:var(--text-mid);line-height:1.6}
+
+  /* ===== Archive ===== */
+  .archive-item {
+    display:flex;align-items:center;gap:16px;padding:18px 22px;
+    background:var(--paper);border-radius:14px;margin-bottom:10px;
+    border:1px solid var(--border);cursor:pointer;transition:all .3s ease;
+  }
+  .archive-item:hover{border-color:var(--sakura);transform:translateY(-1px);box-shadow:0 4px 16px var(--shadow)}
+  .archive-item.current{border-color:var(--sakura-deep);background:var(--sakura-pale)}
+  .archive-date{font-size:.78rem;color:var(--text-light);font-weight:700;white-space:nowrap;min-width:90px}
+  .archive-menus{font-size:.88rem;color:var(--text-mid);flex:1}
+
+  /* ===== Closing ===== */
+  .closing {
+    background:linear-gradient(135deg,var(--sakura-pale),rgba(212,232,208,.3));
+    border-radius:20px;padding:40px;text-align:center;
+    border:1px solid rgba(248,200,212,.2);margin-bottom:28px;
+  }
+  .closing h3{font-family:'Zen Old Mincho',serif;font-size:1.2rem;margin-bottom:12px}
+  .closing p{color:var(--text-mid);font-size:.93rem;line-height:2;max-width:540px;margin:0 auto}
+
+  /* ===== Divider ===== */
+  .divider{display:flex;align-items:center;justify-content:center;gap:16px;margin:40px 0;color:var(--sakura-deep);font-size:.7rem;letter-spacing:.4em;opacity:.5}
+  .divider::before,.divider::after{content:'';height:1px;width:50px;background:var(--sakura)}
+
+  /* ===== Footer ===== */
+  footer{text-align:center;padding:32px 24px;color:var(--text-light);font-size:.78rem;position:relative;z-index:1}
+
+  /* ===== Counter badge ===== */
+  .counter{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:30px;background:var(--green);color:white;font-size:.78rem;font-weight:700;margin-bottom:20px}
+
+  /* ===== Animations ===== */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+  .fade-in.visible{opacity:1;transform:translateY(0)}
+
+  /* ===== Hidden ===== */
+  .hidden{display:none}
+
+  /* ===== Open all ===== */
+  .open-all{text-align:center;margin:24px 0 8px}
+  .open-all-btn{background:var(--green);color:white;border:none;padding:11px 26px;border-radius:30px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .3s;box-shadow:0 3px 12px rgba(123,168,137,.3)}
+  .open-all-btn:hover{background:#6A9A78;transform:translateY(-1px)}
+</style>
+</head>
+<body>
+
+<div class="progress" id="prog"></div>
+<div class="sakura-bg"><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div></div>
+
+<header class="site-header">
+  <h1>🌸 <span class="accent">マタニティ</span>献立<span class="green">ダイアリー</span></h1>
+  <p class="site-subtitle">妊娠8ヶ月の妻のために。<strong>鉄分・葉酸・カルシウム</strong>を意識した<br>毎日の春献立を記録しています。</p>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="showView('latest')">🍽 最新の献立</button>
+  <button class="nav-tab" onclick="showView('archive')">📅 アーカイブ</button>
+</nav>
+
+<main class="main">
+  <div id="latestView"></div>
+  <div id="archiveView" class="hidden"></div>
+</main>
+
+<footer>🌸 マタニティ献立ダイアリー — 2026</footer>
+
+<script>
+// =====================================================================
+// 📌 レシピデータ — ここに新しい日の献立を追加していく
+// 配列の最後が最新として表示される
+// =====================================================================
+const recipes = [
+  {
+    date: "2026-03-14",
+    weekday: "土",
+    comment: "妊娠後期に入ると、お腹が大きくなって一度にたくさん食べられないこともありますよね。そんなときはスープを保温しておいて、少しずつ飲むのがおすすめです。旬の食材は栄養価が高く、味も良いので、シンプルな味付けでも十分おいしく仕上がります。無理せず、季節の恵みを楽しみながら、残りのマタニティライフを元気に過ごしましょう！",
+    nutrients: [
+      { name: "鉄分", emoji: "🩸", cls: "iron", desc: "あさり・小松菜・しらすでたっぷり補給" },
+      { name: "葉酸", emoji: "🌿", cls: "folic", desc: "菜の花と小松菜からしっかり摂取" },
+      { name: "カルシウム", emoji: "🦴", cls: "calcium", desc: "厚揚げ・豆乳・しらすの3本柱" },
+      { name: "食物繊維", emoji: "🍄", cls: "fiber", desc: "キャベツ・しめじ・菜の花で便秘対策" }
+    ],
+    dishes: [
+      {
+        name: "あさりと春キャベツの豆乳スープ",
+        emoji: "🍲",
+        time: 20,
+        desc: "春キャベツの甘みと、あさりの旨みが豆乳ベースのスープに溶け出して、ほっとする味わいです。あさりは鉄分がとても豊富で、妊娠後期の貧血対策にぴったり。豆乳でカルシウムとタンパク質も同時に摂れます。",
+        tip: "豆乳を入れたら沸騰させないこと。弱火でやさしく温めると、なめらかな仕上がりになります。味噌を少し加えることで味に深みが出て、減塩でも満足感のある一杯に。",
+        ingredients: [
+          ["あさり（殻つき）","200g"],["春キャベツ","1/4個（約200g）"],
+          ["新玉ねぎ","1/2個"],["にんじん","1/3本"],
+          ["無調整豆乳","カップ1（約200ml）"],["水","カップ1"],
+          ["味噌","大さじ1"],["にんにく","1片"],
+          ["オリーブ油","小さじ1"],["塩こしょう","少々"]
+        ],
+        steps: [
+          "あさりは塩水（水カップ2に塩小さじ1）に30分以上つけて砂抜きする。殻をこすり合わせて洗う。",
+          "春キャベツはざく切り、新玉ねぎは薄切り、にんじんは短冊切り、にんにくはみじん切りにする。",
+          "鍋にオリーブ油とにんにくを入れて弱火で香りを出す。",
+          "玉ねぎ・にんじんを加えて中火で2分炒める。",
+          "水とあさりを加え、蓋をして中火であさりの口が開くまで加熱する（約3〜4分）。",
+          "キャベツを加えてしんなりするまで1〜2分煮る。",
+          "火を弱めて豆乳を加え、味噌を溶き入れる。沸騰させないよう温めて、塩こしょうで味を調える。"
+        ]
+      },
+      {
+        name: "菜の花としらすの和風パスタ",
+        emoji: "🍝",
+        time: 15,
+        desc: "菜の花は葉酸の含有量がトップクラスの春野菜。ほろ苦さが大人の味わいで、しらすの塩気とよく合います。パスタと同じ鍋で茹でれば洗い物も最小限。白だしとしょうゆのシンプルな味付けで、素材の味を楽しめます。",
+        tip: "菜の花をパスタと一緒に茹でることで洗い物が減ります！しらすの塩気があるので、味付けは控えめからスタートしてください。",
+        ingredients: [
+          ["スパゲティ","160g"],["菜の花","1束（約150g）"],
+          ["しらす干し","40g"],["にんにく","1片"],
+          ["鷹の爪（輪切り）","少々（省略OK）"],["オリーブ油","大さじ1"],
+          ["しょうゆ","小さじ2"],["白だし","小さじ2"],
+          ["パスタの茹で汁","お玉1杯分"],["塩（茹で用）","適量"]
+        ],
+        steps: [
+          "鍋にたっぷりの湯を沸かし、塩を加えてスパゲティを表示時間通りに茹でる。",
+          "菜の花は根元を1cm切り落とし、茎と穂先に分ける。茹で上がり1分前に茎を、30秒前に穂先をパスタの鍋に入れて一緒に茹でる。",
+          "フライパンにオリーブ油・にんにくみじん切り・鷹の爪を入れて弱火で香りを出す。",
+          "しらすを加えてさっと炒める。",
+          "茹で上がったパスタと菜の花、茹で汁お玉1杯分をフライパンに加えて手早く和える。",
+          "しょうゆと白だしを加えて全体を混ぜ合わせる。"
+        ]
+      },
+      {
+        name: "小松菜と厚揚げのオイスター炒め",
+        emoji: "🥬",
+        time: 10,
+        desc: "小松菜はほうれん草以上に鉄分とカルシウムが豊富で、アク抜き不要なのも嬉しいポイント。厚揚げでタンパク質とカルシウムをプラスし、しめじで食物繊維も摂れます。オイスターソースのコクが食欲をそそる一品です。",
+        tip: "小松菜は茎→葉の順に入れると、シャキシャキ感が残ります。厚揚げは先に焼き色をつけると香ばしさアップ！",
+        ingredients: [
+          ["小松菜","1束（約200g）"],["厚揚げ","1枚（約150g）"],
+          ["しめじ","1/2パック"],["にんにく","1片"],
+          ["ごま油","小さじ2"],["オイスターソース","大さじ1"],
+          ["しょうゆ","小さじ1"],["酒（料理酒）","大さじ1"],
+          ["白いりごま","少々"]
+        ],
+        steps: [
+          "小松菜は4cm幅に切り、茎と葉を分ける。厚揚げは一口大に切る。しめじは石づきを取ってほぐす。",
+          "フライパンにごま油とにんにくみじん切りを入れて弱火で香りを出す。",
+          "厚揚げを加えて両面に軽く焼き色がつくまで中火で焼く。",
+          "しめじと小松菜の茎を加えて1分炒める。",
+          "小松菜の葉を加え、酒・オイスターソース・しょうゆを回しかけて全体を炒め合わせる。",
+          "器に盛り、白いりごまを振る。"
+        ]
+      }
+    ]
+  }
+  // =====================================================================
+  // 📌 ↑ 次回「レシピ」と打ったら、ここにカンマ区切りで新しいオブジェクトを追加
+  // =====================================================================
+];
+
+// ===== Render helpers =====
+function fmtDate(d) {
+  const dt = new Date(d + "T00:00:00");
+  return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日`;
+}
+
+function renderDish(dish, idx) {
+  const id = `dish_${Date.now()}_${idx}`;
+  return `
+    <div class="recipe-section">
+      <div class="recipe-head">
+        <span class="recipe-emoji">${dish.emoji}</span>
+        <h3>&#${9312+idx}; ${dish.name}</h3>
+      </div>
+      <p class="recipe-desc">${dish.desc}</p>
+      <button class="toggle-btn" onclick="toggleDish(this,'${id}')">🥄 材料・手順を見る ▼</button>
+      <div class="recipe-body" id="${id}">
+        <div class="ing-box">
+          <h4>📝 材料</h4>
+          <ul class="ing-list">
+            ${dish.ingredients.map(i => `<li><span class="ing-name">${i[0]}</span><span class="ing-amt">${i[1]}</span></li>`).join('')}
+          </ul>
+        </div>
+        <div class="steps-box">
+          <h4>👩‍🍳 手順</h4>
+          ${dish.steps.map((s,i) => `<div class="step"><div class="step-n">${i+1}</div><div class="step-t">${s}</div></div>`).join('')}
+        </div>
+      </div>
+      <div class="tip">
+        <span>💡</span>
+        <span><strong>コツ：</strong>${dish.tip}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderDay(day) {
+  return `
+    <div class="card fade-in">
+      <div class="date-badge">📅 ${fmtDate(day.date)}（${day.weekday}）</div>
+      <div class="section-label">Today's Menu</div>
+      <h2 class="section-title">🍽 今日の献立</h2>
+      <div style="margin-bottom:20px">
+        ${day.dishes.map((d,i) => `
+          <div class="menu-item" onclick="document.getElementById('recipe_sec_${i}').scrollIntoView({behavior:'smooth'})">
+            <div class="menu-num">${i+1}</div>
+            <div>
+              <div class="menu-name">${d.name}</div>
+              <div class="menu-time">⏱ ${d.time}分</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="open-all">
+        <button class="open-all-btn" onclick="toggleAll(this)">📖 すべてのレシピを開く</button>
+      </div>
+    </div>
+    <div class="divider">✿ ✿ ✿</div>
+    ${day.dishes.map((d,i) => `<div id="recipe_sec_${i}" class="card fade-in">${renderDish(d,i)}</div>`).join('')}
+    <div class="divider">✿ ✿ ✿</div>
+    <div class="card fade-in">
+      <div class="section-label">Nutrition</div>
+      <h2 class="section-title">🤰 栄養ポイント</h2>
+      <div class="nut-grid">
+        ${day.nutrients.map(n => `
+          <div class="nut-card ${n.cls}">
+            <div class="e">${n.emoji}</div>
+            <h4>${n.name}</h4>
+            <p>${n.desc}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="closing fade-in">
+      <div style="font-size:2rem;margin-bottom:12px">🌷</div>
+      <h3>ひとこと</h3>
+      <p>${day.comment}</p>
+    </div>
+  `;
+}
+
+function renderArchive() {
+  const sorted = [...recipes].reverse();
+  return `
+    <div class="card">
+      <div class="section-label">Archive</div>
+      <h2 class="section-title">📅 献立アーカイブ</h2>
+      <div class="counter">🍽 全 ${recipes.length} 日分の献立</div>
+      ${sorted.map((day, idx) => `
+        <div class="archive-item ${idx===0?'current':''}" onclick="showDay(${recipes.length-1-idx})">
+          <div class="archive-date">${fmtDate(day.date)}（${day.weekday}）</div>
+          <div class="archive-menus">${day.dishes.map(d=>d.emoji+' '+d.name).join('　')}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ===== State =====
+let currentView = 'latest';
+let currentDayIdx = recipes.length - 1;
+
+function showView(view) {
+  currentView = view;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => { if(t.textContent.includes(view==='latest'?'最新':'アーカイブ')) t.classList.add('active') });
+  if (view === 'latest') {
+    currentDayIdx = recipes.length - 1;
+    document.getElementById('latestView').innerHTML = renderDay(recipes[currentDayIdx]);
+    document.getElementById('latestView').classList.remove('hidden');
+    document.getElementById('archiveView').classList.add('hidden');
+  } else {
+    document.getElementById('archiveView').innerHTML = renderArchive();
+    document.getElementById('archiveView').classList.remove('hidden');
+    document.getElementById('latestView').classList.add('hidden');
+  }
+  observeFadeIn();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function showDay(idx) {
+  currentDayIdx = idx;
+  document.getElementById('latestView').innerHTML = renderDay(recipes[idx]);
+  document.getElementById('latestView').classList.remove('hidden');
+  document.getElementById('archiveView').classList.add('hidden');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab')[0].classList.add('active');
+  currentView = 'latest';
+  observeFadeIn();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ===== Toggle =====
+function toggleDish(btn, id) {
+  const body = document.getElementById(id);
+  const isOpen = body.classList.contains('show');
+  btn.classList.toggle('open', !isOpen);
+  body.classList.toggle('show', !isOpen);
+  btn.textContent = isOpen ? '🥄 材料・手順を見る ▼' : '🥄 材料・手順を閉じる ▲';
+}
+
+function toggleAll(btn) {
+  const bodies = document.querySelectorAll('.recipe-body');
+  const buttons = document.querySelectorAll('.toggle-btn');
+  const allOpen = Array.from(bodies).every(b => b.classList.contains('show'));
+  bodies.forEach(b => b.classList.toggle('show', !allOpen));
+  buttons.forEach(b => { b.classList.toggle('open', !allOpen); b.textContent = allOpen ? '🥄 材料・手順を見る ▼' : '🥄 材料・手順を閉じる ▲'; });
+  btn.textContent = allOpen ? '📖 すべてのレシピを開く' : '📕 すべてのレシピを閉じる';
+}
+
+// ===== Scroll & fade =====
+function observeFadeIn() {
+  const obs = new IntersectionObserver(e => e.forEach(el => { if(el.isIntersecting) el.target.classList.add('visible') }), {threshold:.1});
+  document.querySelectorAll('.fade-in').forEach(el => { el.classList.remove('visible'); obs.observe(el) });
+}
+
+window.addEventListener('scroll', () => {
+  const s = document.documentElement.scrollTop;
+  const h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  document.getElementById('prog').style.width = (s/h)*100 + '%';
+});
+
+// ===== Init =====
+showView('latest');
+</script>
+</body>
+</html>
