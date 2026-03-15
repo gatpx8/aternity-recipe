@@ -222,6 +222,25 @@
   .open-all{text-align:center;margin:24px 0 8px}
   .open-all-btn{background:var(--green);color:white;border:none;padding:11px 26px;border-radius:30px;font-family:inherit;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .3s;box-shadow:0 3px 12px rgba(123,168,137,.3)}
   .open-all-btn:hover{background:#6A9A78;transform:translateY(-1px)}
+
+  /* ===== Shopping list ===== */
+  .shop-list{list-style:none;columns:2;column-gap:20px}
+  @media(max-width:500px){.shop-list{columns:1}}
+  .shop-list li{
+    display:flex;align-items:center;gap:10px;padding:8px 0;
+    border-bottom:1px dashed rgba(232,221,212,.4);font-size:.9rem;
+    break-inside:avoid;
+  }
+  .shop-list li:last-child{border-bottom:none}
+  .shop-check{
+    flex-shrink:0;width:20px;height:20px;border-radius:6px;
+    border:2px solid var(--border);background:white;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;font-size:.7rem;color:transparent;
+  }
+  .shop-check.checked{background:var(--green);border-color:var(--green);color:white}
+  .shop-item-text{flex:1}
+  .shop-item-text.checked{text-decoration:line-through;color:var(--text-light)}
 </style>
 </head>
 <body>
@@ -256,6 +275,22 @@ const recipes = [
     date: "2026-03-14",
     weekday: "土",
     comment: "妊娠後期に入ると、お腹が大きくなって一度にたくさん食べられないこともありますよね。そんなときはスープを保温しておいて、少しずつ飲むのがおすすめです。旬の食材は栄養価が高く、味も良いので、シンプルな味付けでも十分おいしく仕上がります。無理せず、季節の恵みを楽しみながら、残りのマタニティライフを元気に過ごしましょう！",
+    shopping: [
+      "あさり（殻つき）：200g",
+      "春キャベツ：1/4個",
+      "新玉ねぎ：1/2個",
+      "にんじん：1本",
+      "無調整豆乳：1パック",
+      "菜の花：1束",
+      "しらす干し：40g",
+      "スパゲティ：160g",
+      "小松菜：1束",
+      "厚揚げ：1枚",
+      "しめじ：1パック",
+      "にんにく：1個",
+      "白だし（なければ）",
+      "オイスターソース（なければ）"
+    ],
     nutrients: [
       { name: "鉄分", emoji: "🩸", cls: "iron", desc: "あさり・小松菜・しらすでたっぷり補給" },
       { name: "葉酸", emoji: "🌿", cls: "folic", desc: "菜の花と小松菜からしっかり摂取" },
@@ -336,6 +371,17 @@ const recipes = [
     date: "2026-03-15",
     weekday: "日",
     comment: "今日はさわらを使った和食中心の献立です。さわらは漢字で「鰆」と書く、まさに春を代表する魚。DHA・EPAも豊富で、赤ちゃんの脳の発達にも嬉しい食材です。ブロッコリーの卵炒めはビタミンCたっぷりで鉄分の吸収を助けてくれます。新じゃがの味噌汁でほっこり温まって、穏やかな日曜日をお過ごしください。",
+    shopping: [
+      "さわら切り身：2切れ",
+      "ブロッコリー：1株",
+      "卵：2個",
+      "新じゃがいも：1個",
+      "乾燥わかめ",
+      "油揚げ：1枚",
+      "大葉：2枚",
+      "にんにく（昨日の残りでOK）",
+      "小ねぎ"
+    ],
     nutrients: [
       { name: "DHA・EPA", emoji: "🐟", cls: "iron", desc: "さわらで良質な脂質を補給。赤ちゃんの脳の発達に" },
       { name: "葉酸・ビタミンC", emoji: "🥦", cls: "folic", desc: "ブロッコリーは葉酸とビタミンCの宝庫" },
@@ -467,6 +513,22 @@ function renderDay(day) {
     <div class="divider">✿ ✿ ✿</div>
     ${day.dishes.map((d,i) => `<div id="recipe_sec_${i}" class="card fade-in">${renderDish(d,i)}</div>`).join('')}
     <div class="divider">✿ ✿ ✿</div>
+    ${day.shopping ? `
+    <div class="card fade-in">
+      <div class="section-label">Shopping</div>
+      <h2 class="section-title">🛒 買い物リスト</h2>
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:16px">※ 醤油・みりん・塩・砂糖・油など基本調味料は省いています</p>
+      <ul class="shop-list">
+        ${day.shopping.map((item, i) => `
+          <li>
+            <div class="shop-check" onclick="toggleCheck(this)" id="chk_${i}">✓</div>
+            <span class="shop-item-text">${item}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    <div class="divider">✿ ✿ ✿</div>
+    ` : ''}
     <div class="card fade-in">
       <div class="section-label">Nutrition</div>
       <h2 class="section-title">🤰 栄養ポイント</h2>
@@ -555,6 +617,12 @@ function toggleAll(btn) {
   bodies.forEach(b => b.classList.toggle('show', !allOpen));
   buttons.forEach(b => { b.classList.toggle('open', !allOpen); b.textContent = allOpen ? '🥄 材料・手順を見る ▼' : '🥄 材料・手順を閉じる ▲'; });
   btn.textContent = allOpen ? '📖 すべてのレシピを開く' : '📕 すべてのレシピを閉じる';
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  const text = el.nextElementSibling;
+  text.classList.toggle('checked');
 }
 
 // ===== Scroll & fade =====
