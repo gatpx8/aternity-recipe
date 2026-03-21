@@ -254,7 +254,7 @@
 </header>
 
 <nav class="nav-tabs">
-  <button class="nav-tab active" onclick="showView('latest')">🍽 最新の献立</button>
+  <button class="nav-tab active" onclick="showView('latest')">🍽 今日の献立</button>
   <button class="nav-tab" onclick="showView('archive')">📅 アーカイブ</button>
 </nav>
 
@@ -2389,6 +2389,14 @@ function fmtDate(d) {
   return `${dt.getFullYear()}年${dt.getMonth()+1}月${dt.getDate()}日`;
 }
 
+function isToday(dateStr) {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return dateStr === `${yyyy}-${mm}-${dd}`;
+}
+
 function renderDish(dish, idx) {
   const id = `dish_${Date.now()}_${idx}`;
   return `
@@ -2423,8 +2431,8 @@ function renderDay(day) {
   return `
     <div class="card fade-in">
       <div class="date-badge">📅 ${fmtDate(day.date)}（${day.weekday}）</div>
-      <div class="section-label">Today's Menu</div>
-      <h2 class="section-title">🍽 今日の献立</h2>
+      <div class="section-label">${isToday(day.date) ? "Today's Menu" : "Menu"}</div>
+      <h2 class="section-title">🍽 ${isToday(day.date) ? '今日の献立' : 'この日の献立'}</h2>
       <div style="margin-bottom:20px">
         ${day.dishes.map((d,i) => `
           <div class="menu-item" onclick="document.getElementById('recipe_sec_${i}').scrollIntoView({behavior:'smooth'})">
@@ -2488,8 +2496,8 @@ function renderArchive() {
       <h2 class="section-title">📅 献立アーカイブ</h2>
       <div class="counter">🍽 全 ${recipes.length} 日分の献立</div>
       ${sorted.map((day, idx) => `
-        <div class="archive-item ${idx===0?'current':''}" onclick="showDay(${recipes.length-1-idx})">
-          <div class="archive-date">${fmtDate(day.date)}（${day.weekday}）</div>
+        <div class="archive-item ${isToday(day.date)?'current':''}" onclick="showDay(${recipes.length-1-idx})">
+          <div class="archive-date">${fmtDate(day.date)}（${day.weekday}）${isToday(day.date)?'<span style="background:var(--sakura-deep);color:white;font-size:.68rem;padding:2px 8px;border-radius:10px;margin-left:6px">今日</span>':''}</div>
           <div class="archive-menus">${day.dishes.map(d=>d.emoji+' '+d.name).join('　')}</div>
         </div>
       `).join('')}
@@ -2499,14 +2507,34 @@ function renderArchive() {
 
 // ===== State =====
 let currentView = 'latest';
-let currentDayIdx = recipes.length - 1;
+
+// 今日の日付に一致するレシピを探す。なければ最新を表示
+function isToday(dateStr) {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  return dateStr === `${y}-${m}-${d}`;
+}
+
+function getTodayIdx() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const idx = recipes.findIndex(r => r.date === todayStr);
+  return idx >= 0 ? idx : recipes.length - 1;
+}
+
+let currentDayIdx = getTodayIdx();
 
 function showView(view) {
   currentView = view;
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => { if(t.textContent.includes(view==='latest'?'最新':'アーカイブ')) t.classList.add('active') });
+  document.querySelectorAll('.nav-tab').forEach(t => { if(t.textContent.includes(view==='latest'?'今日':'アーカイブ')) t.classList.add('active') });
   if (view === 'latest') {
-    currentDayIdx = recipes.length - 1;
+    currentDayIdx = getTodayIdx();
     document.getElementById('latestView').innerHTML = renderDay(recipes[currentDayIdx]);
     document.getElementById('latestView').classList.remove('hidden');
     document.getElementById('archiveView').classList.add('hidden');
