@@ -197,6 +197,26 @@
   .month-btn:hover{border-color:var(--sakura);color:var(--sakura-deep)}
   .month-btn.active{background:var(--sakura-deep);color:white;border-color:var(--sakura-deep);box-shadow:0 2px 8px rgba(180,100,130,.25)}
 
+  /* ===== Calendar grid ===== */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:20px}
+  .cal-head{text-align:center;font-size:.7rem;font-weight:700;color:var(--text-light);padding:6px 0}
+  .cal-head.sun{color:#d46b7a}
+  .cal-head.sat{color:#6b8fd4}
+  .cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;cursor:pointer;transition:all .2s;border:1.5px solid transparent;background:var(--paper);position:relative;overflow:hidden;min-height:52px}
+  .cal-cell:hover{border-color:var(--sakura);transform:scale(1.04)}
+  .cal-cell.has-recipe{background:var(--paper)}
+  .cal-cell.no-recipe{background:transparent;border:1.5px dashed var(--border);opacity:.4;cursor:default}
+  .cal-cell.no-recipe:hover{transform:none;border-color:var(--border)}
+  .cal-cell.today{border-color:var(--sakura-deep);box-shadow:0 0 0 2px rgba(180,100,130,.2)}
+  .cal-cell.cooked{background:rgba(212,232,208,.35)}
+  .cal-cell.fav{background:rgba(255,240,200,.35)}
+  .cal-day{font-size:.72rem;font-weight:700;color:var(--text-mid);margin-bottom:1px}
+  .cal-day.sun{color:#d46b7a}
+  .cal-day.sat{color:#6b8fd4}
+  .cal-emoji{font-size:1.1rem;line-height:1}
+  .cal-marks{position:absolute;top:2px;right:3px;font-size:.55rem;display:flex;gap:1px}
+  @media(max-width:400px){.cal-cell{min-height:44px}.cal-emoji{font-size:.95rem}.cal-day{font-size:.65rem}}
+
   /* ===== Bookmark & Cooked buttons ===== */
   .mark-btns{display:flex;gap:6px;flex-shrink:0;margin-left:auto}
   .mark-btn{border:none;background:none;font-size:1.1rem;cursor:pointer;padding:4px;border-radius:8px;transition:all .2s;opacity:.35;line-height:1}
@@ -3928,10 +3948,47 @@ function renderArchive() {
   // Apply bookmark/cooked filter
   if (archiveFilter === 'fav') filtered = filtered.filter(r => isMark(r.date, 'fav'));
   if (archiveFilter === 'cooked') filtered = filtered.filter(r => isMark(r.date, 'cooked'));
+  if (archiveFilter === 'notcooked') filtered = filtered.filter(r => !isMark(r.date, 'cooked'));
   const sorted = [...filtered].reverse();
 
   // Find the original index in recipes array for each filtered item
   const getOrigIdx = (date) => recipes.findIndex(r => r.date === date);
+
+  // Build calendar grid
+  const [calY, calM] = archiveMonth.split('-').map(Number);
+  const firstDay = new Date(calY, calM - 1, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calY, calM, 0).getDate();
+  // Map date -> recipe for this month (unfiltered, calendar always shows all)
+  const allMonthRecipes = {};
+  recipes.filter(r => r.date.startsWith(archiveMonth)).forEach(r => { allMonthRecipes[r.date] = r; });
+
+  let calCells = '';
+  // Empty cells before 1st
+  for (let i = 0; i < firstDay; i++) calCells += '<div></div>';
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = archiveMonth + '-' + String(d).padStart(2,'0');
+    const r = allMonthRecipes[dateStr];
+    const dow = new Date(calY, calM - 1, d).getDay();
+    const dayClass = dow === 0 ? 'sun' : dow === 6 ? 'sat' : '';
+    const isFav = isMark(dateStr, 'fav');
+    const isCkd = isMark(dateStr, 'cooked');
+    if (r) {
+      const idx = getOrigIdx(dateStr);
+      const emoji = r.dishes[0] ? r.dishes[0].emoji : '🍽';
+      let cellClass = 'cal-cell has-recipe';
+      if (isToday(dateStr)) cellClass += ' today';
+      if (isCkd) cellClass += ' cooked';
+      else if (isFav) cellClass += ' fav';
+      calCells += `<div class="${cellClass}" onclick="showDay(${idx})">
+        <div class="cal-marks">${isFav?'⭐':''}${isCkd?'✅':''}</div>
+        <div class="cal-day ${dayClass}">${d}</div>
+        <div class="cal-emoji">${emoji}</div>
+      </div>`;
+    } else {
+      calCells += `<div class="cal-cell no-recipe"><div class="cal-day ${dayClass}">${d}</div></div>`;
+    }
+  }
 
   return `
     <div class="card">
@@ -3943,9 +4000,14 @@ function renderArchive() {
           <button class="month-btn ${ym===archiveMonth?'active':''}" onclick="filterArchive('${ym}')">${fmtMonth(ym)}</button>
         `).join('')}
       </div>
+      <div class="cal-grid">
+        <div class="cal-head sun">日</div><div class="cal-head">月</div><div class="cal-head">火</div><div class="cal-head">水</div><div class="cal-head">木</div><div class="cal-head">金</div><div class="cal-head sat">土</div>
+        ${calCells}
+      </div>
       <div class="filter-row">
         <button class="filter-chip ${archiveFilter==='fav'?'on':''}" onclick="setArchiveFilter('fav')">⭐ お気に入り</button>
         <button class="filter-chip ${archiveFilter==='cooked'?'on':''}" onclick="setArchiveFilter('cooked')">✅ 作った</button>
+        <button class="filter-chip ${archiveFilter==='notcooked'?'on':''}" onclick="setArchiveFilter('notcooked')">🔲 まだ作ってない</button>
       </div>
       ${sorted.length === 0 ? '<p style="text-align:center;color:var(--text-light);font-size:.85rem;padding:20px 0">該当する献立がありません</p>' : ''}
       ${sorted.map(day => {
