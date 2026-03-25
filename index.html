@@ -191,6 +191,35 @@
   .archive-date{font-size:.78rem;color:var(--text-light);font-weight:700;white-space:nowrap;min-width:90px}
   .archive-menus{font-size:.88rem;color:var(--text-mid);flex:1}
 
+  /* ===== Month filter ===== */
+  .month-filter{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px}
+  .month-btn{border:1.5px solid var(--border);background:var(--paper);color:var(--text-mid);font-family:inherit;font-size:.82rem;font-weight:600;padding:8px 18px;border-radius:24px;cursor:pointer;transition:all .25s}
+  .month-btn:hover{border-color:var(--sakura);color:var(--sakura-deep)}
+  .month-btn.active{background:var(--sakura-deep);color:white;border-color:var(--sakura-deep);box-shadow:0 2px 8px rgba(180,100,130,.25)}
+
+  /* ===== Bookmark & Cooked buttons ===== */
+  .mark-btns{display:flex;gap:6px;flex-shrink:0;margin-left:auto}
+  .mark-btn{border:none;background:none;font-size:1.1rem;cursor:pointer;padding:4px;border-radius:8px;transition:all .2s;opacity:.35;line-height:1}
+  .mark-btn:hover{opacity:.7;transform:scale(1.15)}
+  .mark-btn.on{opacity:1;transform:scale(1.1)}
+  .mark-btn.on.fav{filter:drop-shadow(0 0 4px rgba(255,200,50,.5))}
+  .mark-btn.on.cooked{filter:drop-shadow(0 0 4px rgba(123,168,137,.5))}
+  .filter-row{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+  .filter-chip{border:1.5px solid var(--border);background:var(--paper);color:var(--text-light);font-family:inherit;font-size:.75rem;padding:5px 14px;border-radius:20px;cursor:pointer;transition:all .25s}
+  .filter-chip:hover{border-color:var(--sakura)}
+  .filter-chip.on{background:var(--sakura-pale);border-color:var(--sakura-deep);color:var(--sakura-deep);font-weight:600}
+
+  /* ===== Cooked memo ===== */
+  .memo-area{margin-top:8px;padding:10px 14px;background:var(--green-pale,rgba(212,232,208,.25));border-radius:12px;border:1px solid rgba(123,168,137,.25)}
+  .memo-area textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:.82rem;line-height:1.6;resize:vertical;min-height:56px;background:var(--paper);color:var(--text-mid);transition:border-color .2s}
+  .memo-area textarea:focus{outline:none;border-color:var(--sakura)}
+  .memo-area textarea::placeholder{color:var(--text-light);opacity:.6}
+  .memo-save-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:6px}
+  .memo-save-btn{border:none;background:var(--green,#7BA889);color:white;font-family:inherit;font-size:.75rem;font-weight:600;padding:5px 16px;border-radius:16px;cursor:pointer;transition:all .2s}
+  .memo-save-btn:hover{opacity:.85}
+  .memo-display{font-size:.8rem;color:var(--text-mid);line-height:1.5;padding:6px 0 0;white-space:pre-wrap}
+  .memo-display .memo-label{font-size:.72rem;color:var(--green,#7BA889);font-weight:700;margin-bottom:2px}
+
   /* ===== Closing ===== */
   .closing {
     background:linear-gradient(135deg,var(--sakura-pale),rgba(212,232,208,.3));
@@ -3728,12 +3757,14 @@ function renderDay(day) {
       <h2 class="section-title">🛒 買い物リスト</h2>
       <p style="font-size:.85rem;color:var(--text-light);margin-bottom:16px">※ 醤油・みりん・塩・砂糖・油など基本調味料は省いています</p>
       <ul class="shop-list">
-        ${day.shopping.map((item, i) => `
+        ${day.shopping.map((item, i) => {
+          const checked = isShopChecked(day.date, i);
+          return `
           <li>
-            <div class="shop-check" onclick="toggleCheck(this)" id="chk_${i}">✓</div>
-            <span class="shop-item-text">${item}</span>
+            <div class="shop-check ${checked?'checked':''}" onclick="toggleCheck('${day.date}',${i},this)" id="chk_${i}">✓</div>
+            <span class="shop-item-text ${checked?'checked':''}">${item}</span>
           </li>
-        `).join('')}
+        `}).join('')}
       </ul>
     </div>
     <div class="divider">✿ ✿ ✿</div>
@@ -3756,22 +3787,213 @@ function renderDay(day) {
       <h3>ひとこと</h3>
       <p>${day.comment}</p>
     </div>
+    <div class="card fade-in" style="text-align:center">
+      <div style="display:flex;justify-content:center;gap:16px;margin-bottom:12px">
+        <button class="mark-btn fav ${isMark(day.date,'fav')?'on':''}" style="font-size:1.5rem;opacity:${isMark(day.date,'fav')?'1':'.35'}" onclick="saveMark('${day.date}','fav');reRenderDay()">⭐</button>
+        <button class="mark-btn cooked ${isMark(day.date,'cooked')?'on':''}" style="font-size:1.5rem;opacity:${isMark(day.date,'cooked')?'1':'.35'}" onclick="saveMark('${day.date}','cooked');reRenderDay()">✅</button>
+      </div>
+      <div style="font-size:.78rem;color:var(--text-light);margin-bottom:12px">⭐ お気に入り　✅ 作った</div>
+      ${isMark(day.date,'cooked') ? `
+        ${getMemo(day.date) ? `
+          <div class="memo-area" style="text-align:left;cursor:pointer" onclick="toggleMemoEdit('today-${day.date}')">
+            <div class="memo-display">
+              <div class="memo-label">📝 メモ</div>
+              ${getMemo(day.date)}
+            </div>
+          </div>
+          <div id="memo-edit-today-${day.date}" style="display:none;margin-top:6px;text-align:left">
+            <div class="memo-area">
+              <textarea id="memo-today-${day.date}" placeholder="例：鶏肉を豚肉で代用した、塩は控えめに…">${getMemo(day.date)}</textarea>
+              <div class="memo-save-row">
+                <button class="memo-save-btn" onclick="saveMemoToday('${day.date}')">保存</button>
+              </div>
+            </div>
+          </div>
+        ` : `
+          <div style="text-align:left">
+            <div class="memo-area">
+              <textarea id="memo-today-${day.date}" placeholder="例：鶏肉を豚肉で代用した、塩は控えめに…"></textarea>
+              <div class="memo-save-row">
+                <button class="memo-save-btn" onclick="saveMemoToday('${day.date}')">保存</button>
+              </div>
+            </div>
+          </div>
+        `}
+      ` : ''}
+    </div>
   `;
 }
 
+// ===== Bookmark & Cooked tracking =====
+function getMarks() {
+  try {
+    return JSON.parse(localStorage.getItem('recipeMark') || '{}');
+  } catch(e) { return {}; }
+}
+function saveMark(date, type) {
+  const marks = getMarks();
+  if (!marks[date]) marks[date] = {};
+  if (type === 'cooked') {
+    // Toggle cooked: if turning OFF, also clear memo
+    if (marks[date].cooked) {
+      marks[date].cooked = false;
+      marks[date].memo = '';
+    } else {
+      marks[date].cooked = true;
+    }
+  } else {
+    marks[date][type] = !marks[date][type];
+  }
+  localStorage.setItem('recipeMark', JSON.stringify(marks));
+  if (currentView === 'archive') {
+    document.getElementById('archiveView').innerHTML = renderArchive();
+    observeFadeIn();
+  }
+}
+function isMark(date, type) {
+  const marks = getMarks();
+  return marks[date] && marks[date][type];
+}
+function getMemo(date) {
+  const marks = getMarks();
+  return (marks[date] && marks[date].memo) || '';
+}
+function saveMemo(date) {
+  const textarea = document.getElementById('memo-' + date);
+  if (!textarea) return;
+  const marks = getMarks();
+  if (!marks[date]) marks[date] = {};
+  marks[date].memo = textarea.value.trim();
+  if (!marks[date].cooked) marks[date].cooked = true;
+  localStorage.setItem('recipeMark', JSON.stringify(marks));
+  document.getElementById('archiveView').innerHTML = renderArchive();
+  observeFadeIn();
+}
+function toggleMemoEdit(date) {
+  const el = document.getElementById('memo-edit-' + date);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function reRenderDay() {
+  // Re-render the current "today" view to reflect mark/memo changes
+  document.getElementById('latestView').innerHTML = renderDay(recipes[currentDayIdx]);
+  observeFadeIn();
+}
+function saveMemoToday(date) {
+  const textarea = document.getElementById('memo-today-' + date);
+  if (!textarea) return;
+  const marks = getMarks();
+  if (!marks[date]) marks[date] = {};
+  marks[date].memo = textarea.value.trim();
+  if (!marks[date].cooked) marks[date].cooked = true;
+  localStorage.setItem('recipeMark', JSON.stringify(marks));
+  reRenderDay();
+}
+
+let archiveFilter = 'all'; // 'all' | 'fav' | 'cooked'
+function setArchiveFilter(f) {
+  archiveFilter = (archiveFilter === f) ? 'all' : f;
+  document.getElementById('archiveView').innerHTML = renderArchive();
+  observeFadeIn();
+}
+
+let archiveMonth = null; // null = show current/today's month
+
+function getAvailableMonths() {
+  const months = new Set();
+  recipes.forEach(r => months.add(r.date.slice(0, 7)));
+  return [...months].sort();
+}
+
+function fmtMonth(ym) {
+  const [y, m] = ym.split('-');
+  return `${parseInt(m)}月`;
+}
+
+function filterArchive(ym) {
+  archiveMonth = ym;
+  document.getElementById('archiveView').innerHTML = renderArchive();
+  observeFadeIn();
+}
+
 function renderArchive() {
-  const sorted = [...recipes].reverse();
+  const months = getAvailableMonths();
+  // Default to today's month (fall back to latest month if today's month has no data)
+  if (!archiveMonth) {
+    const now = new Date();
+    const todayYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    archiveMonth = months.includes(todayYm) ? todayYm : months[months.length - 1];
+  }
+
+  let filtered = recipes.filter(r => r.date.startsWith(archiveMonth));
+  // Apply bookmark/cooked filter
+  if (archiveFilter === 'fav') filtered = filtered.filter(r => isMark(r.date, 'fav'));
+  if (archiveFilter === 'cooked') filtered = filtered.filter(r => isMark(r.date, 'cooked'));
+  const sorted = [...filtered].reverse();
+
+  // Find the original index in recipes array for each filtered item
+  const getOrigIdx = (date) => recipes.findIndex(r => r.date === date);
+
   return `
     <div class="card">
       <div class="section-label">Archive</div>
       <h2 class="section-title">📅 献立アーカイブ</h2>
       <div class="counter">🍽 全 ${recipes.length} 日分の献立</div>
-      ${sorted.map((day, idx) => `
-        <div class="archive-item ${isToday(day.date)?'current':''}" onclick="showDay(${recipes.length-1-idx})">
-          <div class="archive-date">${fmtDate(day.date)}（${day.weekday}）${isToday(day.date)?'<span style="background:var(--sakura-deep);color:white;font-size:.68rem;padding:2px 8px;border-radius:10px;margin-left:6px">今日</span>':''}</div>
-          <div class="archive-menus">${day.dishes.map(d=>d.emoji+' '+d.name).join('　')}</div>
+      <div class="month-filter">
+        ${months.map(ym => `
+          <button class="month-btn ${ym===archiveMonth?'active':''}" onclick="filterArchive('${ym}')">${fmtMonth(ym)}</button>
+        `).join('')}
+      </div>
+      <div class="filter-row">
+        <button class="filter-chip ${archiveFilter==='fav'?'on':''}" onclick="setArchiveFilter('fav')">⭐ お気に入り</button>
+        <button class="filter-chip ${archiveFilter==='cooked'?'on':''}" onclick="setArchiveFilter('cooked')">✅ 作った</button>
+      </div>
+      ${sorted.length === 0 ? '<p style="text-align:center;color:var(--text-light);font-size:.85rem;padding:20px 0">該当する献立がありません</p>' : ''}
+      ${sorted.map(day => {
+        const memo = getMemo(day.date);
+        const isCooked = isMark(day.date, 'cooked');
+        return `
+        <div class="archive-item fade-in ${isToday(day.date)?'current':''}" style="flex-wrap:wrap">
+          <div style="flex:1;min-width:0;display:flex;align-items:center;gap:16px">
+            <div style="flex:1;min-width:0" onclick="showDay(${getOrigIdx(day.date)})">
+              <div class="archive-date">${fmtDate(day.date)}（${day.weekday}）${isToday(day.date)?'<span style="background:var(--sakura-deep);color:white;font-size:.68rem;padding:2px 8px;border-radius:10px;margin-left:6px">今日</span>':''}</div>
+              <div class="archive-menus">${day.dishes.map(d=>d.emoji+' '+d.name).join('　')}</div>
+            </div>
+            <div class="mark-btns">
+              <button class="mark-btn fav ${isMark(day.date,'fav')?'on':''}" onclick="event.stopPropagation();saveMark('${day.date}','fav')" title="お気に入り">⭐</button>
+              <button class="mark-btn cooked ${isCooked?'on':''}" onclick="event.stopPropagation();saveMark('${day.date}','cooked')" title="作った！">✅</button>
+            </div>
+          </div>
+          ${isCooked ? `
+          <div style="width:100%">
+            ${memo ? `
+              <div class="memo-area" onclick="event.stopPropagation();toggleMemoEdit('${day.date}')">
+                <div class="memo-display">
+                  <div class="memo-label">📝 メモ</div>
+                  ${memo}
+                </div>
+              </div>
+              <div id="memo-edit-${day.date}" style="display:none;margin-top:6px" onclick="event.stopPropagation()">
+                <div class="memo-area">
+                  <textarea id="memo-${day.date}" placeholder="例：鶏肉を豚肉で代用した、塩は控えめに…">${memo}</textarea>
+                  <div class="memo-save-row">
+                    <button class="memo-save-btn" onclick="saveMemo('${day.date}')">保存</button>
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <div id="memo-edit-${day.date}" style="margin-top:6px" onclick="event.stopPropagation()">
+                <div class="memo-area">
+                  <textarea id="memo-${day.date}" placeholder="例：鶏肉を豚肉で代用した、塩は控えめに…"></textarea>
+                  <div class="memo-save-row">
+                    <button class="memo-save-btn" onclick="saveMemo('${day.date}')">保存</button>
+                  </div>
+                </div>
+              </div>
+            `}
+          </div>
+          ` : ''}
         </div>
-      `).join('')}
+      `}).join('')}
     </div>
   `;
 }
@@ -3848,7 +4070,18 @@ function toggleAll(btn) {
   btn.textContent = allOpen ? '📖 すべてのレシピを開く' : '📕 すべてのレシピを閉じる';
 }
 
-function toggleCheck(el) {
+function getShopChecks(date) {
+  try {
+    return JSON.parse(localStorage.getItem('shopCheck_' + date) || '{}');
+  } catch(e) { return {}; }
+}
+function isShopChecked(date, idx) {
+  return !!getShopChecks(date)[idx];
+}
+function toggleCheck(date, idx, el) {
+  const checks = getShopChecks(date);
+  checks[idx] = !checks[idx];
+  localStorage.setItem('shopCheck_' + date, JSON.stringify(checks));
   el.classList.toggle('checked');
   const text = el.nextElementSibling;
   text.classList.toggle('checked');
